@@ -1,43 +1,60 @@
-import json
 from collections.abc import Callable
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import Field
 
+from .._json import dump_json_capped
 from ..api_client import AcronisClient, AcronisError
 from ._common import NO_TOKEN
+
+_MAX_LIMIT = 200
 
 
 def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -> None:
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def acronis_get_agents(
-        hostname: str | None = None,
-        online: bool | None = None,
-        os_family: str | None = None,
-        tenant_id: str | None = None,
-        up_to_date: bool | None = None,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
+        hostname: Annotated[
+            str | None,
+            Field(
+                description=(
+                    'Filter by host name; supports "hlike(x)"/"like(x)"/"tlike(x)" '
+                    "for starts-with/contains/ends-with matching."
+                )
+            ),
+        ] = None,
+        online: Annotated[
+            bool | None,
+            Field(description="If true, only responsive agents; if false, only irresponsive."),
+        ] = None,
+        os_family: Annotated[
+            str | None,
+            Field(description="Filter by OS family (UNKNOWN/WINDOWS/LINUX/MACOSX/SOLARIS)."),
+        ] = None,
+        tenant_id: Annotated[
+            str | None, Field(description="Only return agents under this tenant subtree.")
+        ] = None,
+        up_to_date: Annotated[
+            bool | None, Field(description="Filter by whether agent software is current.")
+        ] = None,
+        limit: Annotated[
+            int | None, Field(description="Max number of agents to return (hard cap 200).")
+        ] = None,
+        after: Annotated[
+            str | None, Field(description="Pagination cursor for the next page.")
+        ] = None,
+        before: Annotated[
+            str | None, Field(description="Pagination cursor for the previous page.")
+        ] = None,
     ) -> str:
-        """Fetch registered Acronis agents.
-
-        API: GET /agents (Agent Manager v2)
-
-        Args:
-            hostname: Filter by host name; supports "hlike(x)"/"like(x)"/"tlike(x)"
-                for starts-with/contains/ends-with matching.
-            online: If true, only responsive agents; if false, only irresponsive.
-            os_family: Filter by OS family (UNKNOWN/WINDOWS/LINUX/MACOSX/SOLARIS).
-            tenant_id: Only return agents under this tenant subtree.
-            up_to_date: Filter by whether agent software is current.
-            limit: Max number of agents to return.
-            after: Pagination cursor for the next page.
-            before: Pagination cursor for the previous page.
-        """
+        """Fetch registered Acronis agents."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
+        if limit is not None:
+            limit = min(limit, _MAX_LIMIT)
         params = {
             "hostname": hostname,
             "online": online,
@@ -50,6 +67,6 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
         }
         try:
             result = await client.get("/api/agent_manager/v2/agents", params=params)
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except AcronisError as e:
-            return f"Error: {e}"
+            return e.to_envelope()

@@ -85,6 +85,30 @@ def create_mcp_server(settings: Settings) -> FastMCP:
     # correctly behind a reverse proxy or docker network.
     mcp = FastMCP(
         name="acronis-mcp",
+        instructions=(
+            "Acronis Cyber Protect Cloud is a backup/disaster-recovery and "
+            "endpoint-protection platform MSPs use to safeguard clients' "
+            "workloads (servers, VMs, workstations). This server covers the 6 "
+            "read-only areas MSPbots' Acronis integration uses: alerts "
+            "(acronis_get_alerts, acronis_get_customer_alerts, "
+            "acronis_get_customer_alerts_count, acronis_get_alert_types, "
+            "acronis_get_resource_status, acronis_get_alert_status) for "
+            "monitoring backup failures/health per customer or resource; tasks "
+            "(acronis_get_tasks, acronis_get_task_activities) for backup/"
+            "restore job history and progress; agents (acronis_get_agents) for "
+            "which protection agents are installed/online per host; resources "
+            "(acronis_get_resources, acronis_get_resource_statuses) for the "
+            "inventory of protected workloads/devices/groups and their "
+            "protection status; policies (acronis_get_policies, "
+            "acronis_get_policy_applications) for which protection plans exist "
+            "and which resources they apply to; tenants (acronis_get_tenant) "
+            "for a customer account's details. All 14 tools are read-only; "
+            "there is no write/delete tooling. Typical flow: acronis_get_tenant "
+            "or acronis_get_resources to identify a customer/workload, then "
+            "acronis_get_alerts or acronis_get_resource_statuses to check "
+            "protection health, then acronis_get_tasks for job history if "
+            "something looks wrong."
+        ),
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
 

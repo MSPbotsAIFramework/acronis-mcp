@@ -1,60 +1,80 @@
-import json
 from collections.abc import Callable
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import Field
 
+from .._json import dump_json_capped
 from ..api_client import AcronisClient, AcronisError
 from ._common import NO_TOKEN
 
 _BASE = "/api/resource_management/v4"
+_MAX_LIMIT = 200
 
 
 def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -> None:
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def acronis_get_resources(
-        tenant_id: str | None = None,
-        agent_id: str | None = None,
-        parent_id: str | None = None,
-        type: str | None = None,
-        resource_id: str | None = None,
-        search: str | None = None,
-        include_attributes: bool | None = None,
-        include_deleted: bool | None = None,
-        is_group: bool | None = None,
-        updated_at: str | None = None,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        extra_params: dict[str, object] | None = None,
+        tenant_id: Annotated[
+            str | None, Field(description="Filter by one or more tenant IDs/UUIDs (max 100).")
+        ] = None,
+        agent_id: Annotated[
+            str | None, Field(description="Filter by one or more agent UUIDs (max 100).")
+        ] = None,
+        parent_id: Annotated[
+            str | None, Field(description="Filter by one or more parent UUIDs (max 100).")
+        ] = None,
+        type: Annotated[
+            str | None, Field(description="Filter by resource type (ResourceType or cti.CTI), max 10.")
+        ] = None,
+        resource_id: Annotated[
+            str | None, Field(description="Filter by one or more resource UUIDs (max 100).")
+        ] = None,
+        search: Annotated[
+            str | None, Field(description="SQL-like search by type and tags.")
+        ] = None,
+        include_attributes: Annotated[
+            bool | None, Field(description="If true, include resources' attributes.")
+        ] = None,
+        include_deleted: Annotated[
+            bool | None, Field(description="If true, include deleted resources.")
+        ] = None,
+        is_group: Annotated[
+            bool | None, Field(description="If true, only groups; if false, only non-group resources.")
+        ] = None,
+        updated_at: Annotated[
+            str | None, Field(description="Filter by update timestamp.")
+        ] = None,
+        limit: Annotated[
+            int | None, Field(description="Number of elements per page (hard cap 200).")
+        ] = None,
+        after: Annotated[
+            str | None, Field(description="Pagination cursor after the current page.")
+        ] = None,
+        before: Annotated[
+            str | None, Field(description="Pagination cursor before the current page.")
+        ] = None,
+        extra_params: Annotated[
+            dict[str, object] | None,
+            Field(
+                description=(
+                    "Additional raw query params (has_member_id, "
+                    "include_attribute_namespaces, not_applied_only, "
+                    "applicable_to_policy_id, applicable_to_policy_selection_id, "
+                    "applied_only, applied_to_policy_id, "
+                    "applied_to_policy_selection_id, allowed_actions)."
+                )
+            ),
+        ] = None,
     ) -> str:
-        """Fetch a list of all resources (managed workloads/devices/groups).
-
-        API: GET /resource_management/v4/resources
-
-        Args:
-            tenant_id: Filter by one or more tenant IDs/UUIDs (max 100).
-            agent_id: Filter by one or more agent UUIDs (max 100).
-            parent_id: Filter by one or more parent UUIDs (max 100).
-            type: Filter by resource type (ResourceType or cti.CTI), max 10.
-            resource_id: Filter by one or more resource UUIDs (max 100).
-            search: SQL-like search by type and tags.
-            include_attributes: If true, include resources' attributes.
-            include_deleted: If true, include deleted resources.
-            is_group: If true, only groups; if false, only non-group resources.
-            updated_at: Filter by update timestamp.
-            limit: Number of elements per page.
-            after: Pagination cursor after the current page.
-            before: Pagination cursor before the current page.
-            extra_params: Additional raw query params (has_member_id,
-                include_attribute_namespaces, not_applied_only,
-                applicable_to_policy_id, applicable_to_policy_selection_id,
-                applied_only, applied_to_policy_id, applied_to_policy_selection_id,
-                allowed_actions).
-        """
+        """Fetch a list of all resources (managed workloads/devices/groups)."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
+        if limit is not None:
+            limit = min(limit, _MAX_LIMIT)
         params = {
             "tenant_id": tenant_id,
             "agent_id": agent_id,
@@ -73,46 +93,58 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
         }
         try:
             result = await client.get(f"{_BASE}/resources", params=params)
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except AcronisError as e:
-            return f"Error: {e}"
+            return e.to_envelope()
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def acronis_get_resource_statuses(
-        tenant_id: str | None = None,
-        agent_id: str | None = None,
-        resource_id: str | None = None,
-        search: str | None = None,
-        include_deleted: bool | None = None,
-        updated_at: str | None = None,
-        order: str | None = None,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        extra_params: dict[str, object] | None = None,
+        tenant_id: Annotated[
+            str | None, Field(description="Filter by one or more tenant IDs/UUIDs (max 100).")
+        ] = None,
+        agent_id: Annotated[
+            str | None, Field(description="Filter by one or more agent UUIDs (max 100).")
+        ] = None,
+        resource_id: Annotated[
+            str | None, Field(description="Filter by one or more resource UUIDs (max 100).")
+        ] = None,
+        search: Annotated[
+            str | None, Field(description="SQL-like search by type and tags.")
+        ] = None,
+        include_deleted: Annotated[
+            bool | None, Field(description="If true, include deleted resources.")
+        ] = None,
+        updated_at: Annotated[
+            str | None, Field(description="Filter by update timestamp.")
+        ] = None,
+        order: Annotated[
+            str | None, Field(description='e.g. "is_group" or "asc(updated_at)".')
+        ] = None,
+        limit: Annotated[
+            int | None, Field(description="Number of elements per page (hard cap 200).")
+        ] = None,
+        after: Annotated[
+            str | None, Field(description="Pagination cursor after the current page.")
+        ] = None,
+        before: Annotated[
+            str | None, Field(description="Pagination cursor before the current page.")
+        ] = None,
+        extra_params: Annotated[
+            dict[str, object] | None,
+            Field(
+                description=(
+                    "Additional raw query params (parent_id, has_member_id, type, "
+                    "selection_id, include_attributes, include_attribute_namespaces)."
+                )
+            ),
+        ] = None,
     ) -> str:
-        """Fetch the protection status of resources.
-
-        API: GET /resource_management/v4/resource_statuses
-
-        Args:
-            tenant_id: Filter by one or more tenant IDs/UUIDs (max 100).
-            agent_id: Filter by one or more agent UUIDs (max 100).
-            resource_id: Filter by one or more resource UUIDs (max 100).
-            search: SQL-like search by type and tags.
-            include_deleted: If true, include deleted resources.
-            updated_at: Filter by update timestamp.
-            order: e.g. "is_group" or "asc(updated_at)".
-            limit: Number of elements per page.
-            after: Pagination cursor after the current page.
-            before: Pagination cursor before the current page.
-            extra_params: Additional raw query params (parent_id, has_member_id,
-                type, selection_id, include_attributes,
-                include_attribute_namespaces).
-        """
+        """Fetch the protection status of resources."""
         client = client_factory()
         if client is None:
             return NO_TOKEN
+        if limit is not None:
+            limit = min(limit, _MAX_LIMIT)
         params = {
             "tenant_id": tenant_id,
             "agent_id": agent_id,
@@ -128,6 +160,6 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
         }
         try:
             result = await client.get(f"{_BASE}/resource_statuses", params=params)
-            return json.dumps(result, indent=2)
+            return dump_json_capped(result)
         except AcronisError as e:
-            return f"Error: {e}"
+            return e.to_envelope()
