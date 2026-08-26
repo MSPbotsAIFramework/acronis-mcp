@@ -93,7 +93,14 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def acronis_get_customer_alerts(
         customer_id: Annotated[
-            list[str], Field(description="Required list of customer IDs whose alerts to return.")
+            list[str],
+            Field(
+                description=(
+                    "Required list of customer (tenant) UUIDs whose alerts to return "
+                    "— not company display names. Resolve a name to its ID via "
+                    "acronis_get_tenant or acronis_get_resources first."
+                )
+            ),
         ],
         severity: Annotated[
             str | None, Field(description="Filter by severity (ok/information/warning/error/critical).")
@@ -157,7 +164,10 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
             ),
         ] = None,
     ) -> str:
-        """Fetch count of alerts per customer (customers with no alerts are omitted)."""
+        """Fetch aggregate alert COUNTS per customer, not the alert list itself
+        (customers with no alerts are omitted). Use acronis_get_customer_alerts
+        for the actual alert rows.
+        """
         client = client_factory()
         if client is None:
             return NO_TOKEN
@@ -177,7 +187,14 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def acronis_get_alert_types(
         os_type: Annotated[
-            list[str], Field(description="Required list of OS filters (ios/linux/macos/windows).")
+            list[str],
+            Field(
+                description=(
+                    "Required list of OS filters (ios/linux/macos/windows) — the "
+                    "vendor API has no \"all\" option. If the user hasn't specified "
+                    'a target OS, pass all four: ["ios","linux","macos","windows"].'
+                )
+            ),
         ],
         category: Annotated[
             str | None, Field(description="Filter by list of type categories.")
@@ -203,7 +220,8 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
             list[str] | None,
             Field(
                 description=(
-                    "Optional list of resource IDs to filter by; if omitted, returns "
+                    "Optional list of resource UUIDs to filter by — not hostnames, "
+                    "resolve via acronis_get_resources first. If omitted, returns "
                     "statuses for all resources that have alerts."
                 )
             ),

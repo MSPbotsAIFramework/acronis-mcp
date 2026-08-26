@@ -55,7 +55,11 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
             ),
         ] = None,
     ) -> str:
-        """Fetch a list of tasks."""
+        """Fetch a list of tasks (job-level state, e.g. a backup run — one row per task).
+
+        For the granular step-by-step log within a task, use
+        acronis_get_task_activities instead.
+        """
         client = client_factory()
         if client is None:
             return NO_TOKEN
@@ -116,7 +120,10 @@ def register(mcp: FastMCP, client_factory: Callable[[], AcronisClient | None]) -
             ),
         ] = None,
     ) -> str:
-        """Fetch a list of task activities."""
+        """Fetch a list of task activities (granular sub-steps within a task —
+        more detailed than task-level state alone; use acronis_get_tasks for
+        the task's overall state).
+        """
         client = client_factory()
         if client is None:
             return NO_TOKEN
