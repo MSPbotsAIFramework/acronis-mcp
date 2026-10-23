@@ -119,14 +119,14 @@ curl http://localhost:8080/health
 
 No credentials are required for the health endpoint.
 
-## 授权参数说明 (Authentication)
+## Authentication
 
 Every request to `/mcp` must include the following HTTP headers:
 
-| Header | 类型 | 是否必填 | 默认值 | 枚举值 | 字段描述 | Example |
+| Header | Type | Required | Default | Allowed values | Description | Example |
 |---|---|---|---|---|---|---|
-| `X-Acronis-Token` | string | 必填 | 无 | 无(自由文本) | OAuth2 bearer access token,由调用方(Agent Platform / 上游网关)通过 `POST <datacenter-url>/api/2/idp/token`(client_credentials grant,需 client_id + client_secret)预先换取并负责刷新。本服务从不接触 client_id/client_secret,只转发已获取的 token。 | `X-Acronis-Token: <access_token>` |
-| `X-Acronis-Datacenter-Url` | string | 必填 | 无 | 无(不同租户对应不同数据中心域名,以该租户在 Acronis 管理控制台 / MSPbots 集成配置里的 Data Center URL 为准,例如 `https://us5-cloud.acronis.com`、`https://eu2-cloud.acronis.com`) | Acronis Cyber Protect Cloud 每个租户被分配在某一个数据中心,没有统一默认地址,必须显式传入。 | `X-Acronis-Datacenter-Url: https://us5-cloud.acronis.com` |
+| `X-Acronis-Token` | string | Required | None | None (free text) | OAuth2 bearer access token, obtained in advance and refreshed by the caller (Agent Platform / upstream gateway) via `POST <datacenter-url>/api/2/idp/token` (client_credentials grant, requires client_id + client_secret). This service never touches client_id/client_secret and only forwards the token already obtained. | `X-Acronis-Token: <access_token>` |
+| `X-Acronis-Datacenter-Url` | string | Required | None | None (different tenants map to different data center domains; use the Data Center URL from the tenant's Acronis management console / MSPbots integration configuration, for example `https://us5-cloud.acronis.com`, `https://eu2-cloud.acronis.com`) | Each Acronis Cyber Protect Cloud tenant is assigned to one data center and there is no common default address, so it must be passed explicitly. | `X-Acronis-Datacenter-Url: https://us5-cloud.acronis.com` |
 
 Missing either header returns `401 Unauthorized`.
 
@@ -153,49 +153,49 @@ Connect your MCP client with:
 
 ### Alert Manager (6)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_alerts` | 按条件查全部告警 | `limit?`, `severity?`, `type?`, `category?`, `tenant?`, `query?`, `show_deleted?`, `order?`, `updated_at?`, `created_at?`, `extra_params?` |
-| `acronis_get_customer_alerts` | 按客户分组查告警 | `customer_id`(必填,列表), `severity?`, `type?`, `category?`, `query?`, `show_deleted?`, `extra_params?` |
-| `acronis_get_customer_alerts_count` | 查每个客户的告警计数 | `severity?`, `type?`, `category?`, `show_deleted?`, `extra_params?` |
-| `acronis_get_alert_types` | 查全部已注册告警类型 | `os_type`(必填,列表), `category?`, `order?` |
-| `acronis_get_resource_status` | 查含最高严重告警的资源 | `id?`(列表), `embed_alert?` |
-| `acronis_get_alert_status` | 按 scope 分组查最新最高严重告警 | `scope_key`(必填), `scope_value?`(列表) |
+| `acronis_get_alerts` | Query all alerts by condition | `limit?`, `severity?`, `type?`, `category?`, `tenant?`, `query?`, `show_deleted?`, `order?`, `updated_at?`, `created_at?`, `extra_params?` |
+| `acronis_get_customer_alerts` | Query alerts grouped by customer | `customer_id` (required, list), `severity?`, `type?`, `category?`, `query?`, `show_deleted?`, `extra_params?` |
+| `acronis_get_customer_alerts_count` | Get the alert count for each customer | `severity?`, `type?`, `category?`, `show_deleted?`, `extra_params?` |
+| `acronis_get_alert_types` | Query all registered alert types | `os_type` (required, list), `category?`, `order?` |
+| `acronis_get_resource_status` | Query resources with their highest-severity alert | `id?` (list), `embed_alert?` |
+| `acronis_get_alert_status` | Query the latest highest-severity alert grouped by scope | `scope_key` (required), `scope_value?` (list) |
 
 ### Task Manager (2)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_tasks` | 查任务列表 | `state?`, `type?`, `priority?`, `resourceId?`, `policyId?`, `updatedAt?`, `limit?`, `after?`, `order?`, `lod?`, `extra_params?` |
-| `acronis_get_task_activities` | 查任务活动列表 | `state?`, `type?`, `taskId?`, `resourceId?`, `policyId?`, `updatedAt?`, `limit?`, `after?`, `order?`, `lod?`, `extra_params?` |
+| `acronis_get_tasks` | Query the task list | `state?`, `type?`, `priority?`, `resourceId?`, `policyId?`, `updatedAt?`, `limit?`, `after?`, `order?`, `lod?`, `extra_params?` |
+| `acronis_get_task_activities` | Query the task activity list | `state?`, `type?`, `taskId?`, `resourceId?`, `policyId?`, `updatedAt?`, `limit?`, `after?`, `order?`, `lod?`, `extra_params?` |
 
 ### Agent Manager (1)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_agents` | 查已注册 agent 列表 | `hostname?`, `online?`, `os_family?`, `tenant_id?`, `up_to_date?`, `limit?`, `after?`, `before?` |
+| `acronis_get_agents` | Query the list of registered agents | `hostname?`, `online?`, `os_family?`, `tenant_id?`, `up_to_date?`, `limit?`, `after?`, `before?` |
 
 ### Resource Management (2)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_resources` | 查全部受管资源(workload/设备/分组) | `tenant_id?`, `agent_id?`, `parent_id?`, `type?`, `resource_id?`, `search?`, `include_attributes?`, `include_deleted?`, `is_group?`, `updated_at?`, `limit?`, `after?`, `before?`, `extra_params?` |
-| `acronis_get_resource_statuses` | 查资源防护状态 | `tenant_id?`, `agent_id?`, `resource_id?`, `search?`, `include_deleted?`, `updated_at?`, `order?`, `limit?`, `after?`, `before?`, `extra_params?` |
+| `acronis_get_resources` | Query all managed resources (workloads/devices/groups) | `tenant_id?`, `agent_id?`, `parent_id?`, `type?`, `resource_id?`, `search?`, `include_attributes?`, `include_deleted?`, `is_group?`, `updated_at?`, `limit?`, `after?`, `before?`, `extra_params?` |
+| `acronis_get_resource_statuses` | Query resource protection status | `tenant_id?`, `agent_id?`, `resource_id?`, `search?`, `include_deleted?`, `updated_at?`, `order?`, `limit?`, `after?`, `before?`, `extra_params?` |
 
 ### Policy Management (2)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_policies` | 查防护策略列表 | `tenant_id?`, `types?`, `enabled?`, `policy_id?`, `search?`, `include_settings?`, `templates_only?`, `limit?`, `after?`, `before?`, `extra_params?` |
-| `acronis_get_policy_applications` | 查策略应用(策略与资源的绑定关系) | `tenant_id?`, `policy_id?`, `context_id?`, `context_type?`, `status?`, `enabled_only?`, `limit?`, `after?`, `before?`, `extra_params?` |
+| `acronis_get_policies` | Query the protection policy list | `tenant_id?`, `types?`, `enabled?`, `policy_id?`, `search?`, `include_settings?`, `templates_only?`, `limit?`, `after?`, `before?`, `extra_params?` |
+| `acronis_get_policy_applications` | Query policy applications (bindings between policies and resources) | `tenant_id?`, `policy_id?`, `context_id?`, `context_type?`, `status?`, `enabled_only?`, `limit?`, `after?`, `before?`, `extra_params?` |
 
 ### Account Management (1)
 
-| Tool | 功能 | 参数 |
+| Tool | Description | Parameters |
 |---|---|---|
-| `acronis_get_tenant` | 按 ID 查租户信息 | `tenant_id`(必填), `embed_path?`, `allow_deleted?` |
+| `acronis_get_tenant` | Query tenant information by ID | `tenant_id` (required), `embed_path?`, `allow_deleted?` |
 
-## 测试示例 (Test Example)
+## Test Example
 
 Fetch alerts:
 
